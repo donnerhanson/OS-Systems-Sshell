@@ -10,6 +10,8 @@
 
 int main(int argc, const char * argv[]) {
     // insert code here...
+    // this is a comment
+    int i = 0;
     printf("Hello, World!\n");
     return 0;
 }
