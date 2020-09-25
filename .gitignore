@@ -50,3 +50,5 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+Sshell/Sshell.xcodeproj/project.xcworkspace/xcuserdata/Donner.xcuserdatad/UserInterfaceState.xcuserstate
+*.xcuserstate
