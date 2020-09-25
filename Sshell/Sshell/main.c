@@ -48,9 +48,7 @@
 #include <fcntl.h>  // defines open/close, read/write flags
 #include <stdio.h>  // defines BUFSIZ, printf
 #include <stdlib.h> // defines EXIT_FAILURE
-#include <string.h>
 #include <unistd.h> // defines access, read, write
-
 
 int main(int argc, const char * argv[]) {
 
@@ -65,7 +63,7 @@ int main(int argc, const char * argv[]) {
     }
     int should_run = 1;
     
-    //while (should_run) {
+    while (should_run) {
         printf("osh-> ");
         
         // when the user enters exit at the prompt, your program will set should_run to 0 and terminate.
@@ -73,51 +71,10 @@ int main(int argc, const char * argv[]) {
         //args[1] = "-ael"
         //args[2] = NULL
         // This will require parsing what the user has entered into separate tokens and storing the tokens in an array of character strings. For example, if the user enters the command ps -ael at the osh > prompt, the values stored in the args array are:
-        //break;
+        break;
         
-    //}
-    pid_t   pid;
-    char    *message;
-    int     n;
-
-    printf("Fork program starting, ... \n");
-    pid = fork();
-
-    if (pid < 0) {
-        printf("Fork error: %d (%s) \n", errno, strerror(errno));
-        return -1;
     }
-    else if (pid == 0) {   /* This is the child process */
-        message = "This is the child";
-        n = 2;
-    }
-    else {   /* This is the parent process */
-        message = "This is the parent";
-        n = 1;
-    }
-
-    for (; n > 0; n--) {
-        puts(message);
-        sleep(1);
-    }
-
-    if (pid > 0) { /* this is for the parent only */
-        int  stat_val;
-        pid_t child_pid;
-
-        child_pid = wait(&stat_val);
-
-        printf("Child has finished: PID = %d \n", child_pid);
-        if (WIFEXITED(stat_val)) {
-            printf("Child exited with code %d\n", WEXITSTATUS(stat_val));
-        }
-
-        printf("Parent has finished \n");
-
-    }
-
-    return 0;
-
+    
     //execvp(argv[1], &argv[2]);
     printf("%d, %s, %s\n", argc, argv[1], argv [2]);
     return 0;
