@@ -42,6 +42,9 @@
  
  References:
  1) man pages
+ 2) copy substring: https://stackoverflow.com/questions/6205195/given-a-starting-and-ending-indices-how-can-i-copy-part-of-a-string-in-c/6205241
+ 3)
+ 
 */
 
 #include <errno.h>  // defines error codes for exit
@@ -52,31 +55,64 @@
 #include <unistd.h> // defines access, read, write
 
 
+#define MAX_ARGS 4
+
 int main(int argc, const char * argv[]) {
 
-    // check argument count
-    if (argc < 3){
-        printf("Program requires an input and output file path\n");
-        return EINVAL;
-    }
-    if (argc > 3) {
-        printf("Too many arguments...\nProgram requires an input and output file path\n");
-        return EINVAL;
-    }
-    int should_run = 1;
-    
-    //while (should_run) {
+    //int should_run = 1;
+    char should_run[6] = "exit\n";
+    char input[BUFSIZ] = {'\0'};
+    int args_len = 0;
+    int n_args = 0;
+    while ((strcmp(should_run,input)) != 0) {
         printf("osh-> ");
+        // clear arr contents
+        memset(input, 0, sizeof input);
+        // read in contents to char*
+        fgets(input,BUFSIZ,stdin);
         
+        // create a char* with max_args allowed
+        char args[MAX_ARGS][BUFSIZ] = {'\0'};
+        
+        // get the length of the string without the null terminator
+        for (int i = 0; (i < strlen(input)) && (i < BUFSIZ); i++, args_len++) {
+            printf("%d : %c\n", i, input[i]);
+            if (input[i] == ' ' || input[i] == '\n') {
+                if (n_args < MAX_ARGS) {
+                    int substring_start = i - args_len;
+                    printf("arg len: %d \t arg_first index: %d\n", args_len,substring_start);
+                    // copy substring to char* arr
+                    strncpy (args[n_args], input+substring_start, i - substring_start );
+                    printf("Arg num: %d\n", n_args+1);
+                    // do not include space in substring start
+                    args_len = -1;
+                    ++n_args;
+                }
+                else{
+                    printf("too many arguments\n");
+                    n_args = 0;
+                    break;
+                }
+                
+            }
+        }
+        if(strcmp(args[0], "exit") != 0) {
+        for (int i = 0; i < MAX_ARGS; i++)
+            printf("%s\n", args[i]);
+        }
+
+        n_args = 0;
+        args_len = 0;
+
         // when the user enters exit at the prompt, your program will set should_run to 0 and terminate.
         //args[0] = "ps"
         //args[1] = "-ael"
         //args[2] = NULL
         // This will require parsing what the user has entered into separate tokens and storing the tokens in an array of character strings. For example, if the user enters the command ps -ael at the osh > prompt, the values stored in the args array are:
-        //break;
+
         
-    //}
-    pid_t   pid;
+    }
+    /*pid_t   pid;
     char    *message;
     int     n;
 
@@ -87,11 +123,11 @@ int main(int argc, const char * argv[]) {
         printf("Fork error: %d (%s) \n", errno, strerror(errno));
         return -1;
     }
-    else if (pid == 0) {   /* This is the child process */
+    else if (pid == 0) {   // This is the child process
         message = "This is the child";
         n = 2;
     }
-    else {   /* This is the parent process */
+    else {   // This is the parent process
         message = "This is the parent";
         n = 1;
     }
@@ -101,7 +137,7 @@ int main(int argc, const char * argv[]) {
         sleep(1);
     }
 
-    if (pid > 0) { /* this is for the parent only */
+    if (pid > 0) { // this is for the parent only
         int  stat_val;
         pid_t child_pid;
 
@@ -115,10 +151,9 @@ int main(int argc, const char * argv[]) {
         printf("Parent has finished \n");
 
     }
-
+*/
     return 0;
 
     //execvp(argv[1], &argv[2]);
-    printf("%d, %s, %s\n", argc, argv[1], argv [2]);
-    return 0;
+    //printf("%d, %s, %s\n", argc, argv[1], argv [2]);
 }
