@@ -51,29 +51,32 @@
 #include <fcntl.h>  // defines open/close, read/write flags
 #include <stdio.h>  // defines BUFSIZ, printf
 #include <stdlib.h> // defines EXIT_FAILURE
-#include <string.h>
+#include <string.h> // defines strlen, strcomp, strncpy
 #include <unistd.h> // defines access, read, write
 
 
 #define MAX_ARGS 9
 
 int main(int argc, const char * argv[]) {
-    
+    printf("********** Welcome to the OSH **********\n");
     //int should_run = 1;
     char should_run[6] = "exit\n";
     char input[BUFSIZ] = {'\0'};
     char command[BUFSIZ] = {'\0'};
-    char *params[BUFSIZ] = {'\0'};
+    char *params[BUFSIZ];
     int args_len = 0;
     int n_args = 0;
+    int status;
+    pid_t pid;
     while ((strcmp(should_run,input)) != 0) {
-        printf("osh-> ");
+        printf("osh> ");
+        fflush(stdout);
         // clear arr contents
         memset(input, 0, sizeof input);
         // read in contents to char*
-        fgets(input,BUFSIZ,stdin);
-        printf("\n");
-        
+        fgets(input, BUFSIZ, stdin);
+        if (strcmp(input, should_run) == 0)
+            break;
         // create a char* with max_args allowed
         char args[MAX_ARGS][BUFSIZ] = {'\0'};
         
@@ -83,12 +86,12 @@ int main(int argc, const char * argv[]) {
             //printf("%d : %c\n", i, input[i]);
             if (input[i] == ' ' || input[i] == '\n') {
                 if (n_args < MAX_ARGS) {
+                    // starting index of next argument
                     int substring_start = i - args_len;
                     //printf("arg len: %d \t arg_first index: %d\n", args_len,substring_start);
                     // copy substring to char* arr
-                    
-                    strncpy (args[n_args], input+substring_start, i - substring_start );
-                    //printf("Arg num: %d\n", n_args+1);
+                    strncpy (args[n_args], input+substring_start,
+                             i - substring_start );
                     // do not include space in substring start
                     args_len = -1;
                     ++n_args;
@@ -104,12 +107,12 @@ int main(int argc, const char * argv[]) {
         }
         int ch_num = 0;
         // FORMAT OUTPUT Arrays
-        // execvp(cmd, {"cmd", "-argoption", "argoption", "arg option"})
+        /* execvp(cmd, {"cmd", "-arg_flags or options",
+         "arg_option", "arg_option", ...}) */
         if(strcmp(args[0], "exit") != 0) {
             
             for (int i = 0; i < MAX_ARGS - 1; i++, ch_num++) {
                 if (i == 0) {
-                    //printf("%s ", args[i]);
                     memcpy(command, args[i], sizeof(args[i]));
                     params[ch_num] = args[i];
                 }
@@ -122,8 +125,6 @@ int main(int argc, const char * argv[]) {
                         params[ch_num] = NULL;
                     }
                 }
-                
-                
             }
         }
         n_args = 0;
@@ -136,16 +137,12 @@ int main(int argc, const char * argv[]) {
         //params[0] = "ps"
         //params[1] = "-ael"
         //params[2] = NULL
-        
-        if (( strcmp(command, "exit")) !=0 ) {
-            int status;
-            pid_t pid;
-            
+        // make sure that theres a non-null cmd
+        if ((strcmp(command, "")) != 0 ) {
             pid = fork ();
             if (pid == 0) {
                 /* This is the child process.  Execute the shell command. */
                 execvp(command, params);
-                //execl (SHELL, SHELL, "-c", command, NULL);
                 _exit (EXIT_FAILURE);
             }
             else if (pid < 0) {
@@ -162,12 +159,8 @@ int main(int argc, const char * argv[]) {
                 
             }
         }
-
+        
     }
-    
+    printf("********** GOODBYE **********\n");
     return 0;
-    
-    
-    //printf("%d, %s, %s\n", argc, argv[1], argv [2]);
-    
 }
