@@ -1,10 +1,8 @@
 /*
 Version: 0.1
 Name: Donner Hanson
-Date: September 18, 2020
-File: filecpy.c
-This program uses system calls to copy a file to a new file
-
+Date: September 27, 2020
+File: sshell.c
 
 Process:
 Enter loop
@@ -148,6 +146,7 @@ int main(int argc, const char * argv[]) {
                     }
                     else{
                         params[ch_num] = NULL;
+                        break; // no need to copy NULL to end of arr
                     }
                 }
             }
