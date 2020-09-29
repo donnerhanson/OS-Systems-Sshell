@@ -1,25 +1,25 @@
 /*
-Version: 0.1
-Name: Donner Hanson
-Date: September 27, 2020
-File: sshell.c
-
-Process:
-Enter loop
-Get User input
-Parse and place data into argument arrays
-pass to execution function
-   if contains ampersand : perform process in child process
-   else
-       return control to parent process
-
-
-References:
-1) man pages
-2) copy substring: https://stackoverflow.com/questions/6205195/given-a-starting-and-ending-indices-how-can-i-copy-part-of-a-string-in-c/6205241
-3)
-
-*/
+ Version: 0.1
+ Name: Donner Hanson
+ Date: September 27, 2020
+ File: sshell.c
+ 
+ Process:
+ Enter loop
+ Get User input
+ Parse and place data into argument arrays - parse
+ pass to execution function
+    if contains ampersand : perform execution process in background child process and have parent wait for exit from process
+ else
+ return control to parent process
+ 
+ 
+ References:
+ 1) man pages
+ 2) copy substring: https://stackoverflow.com/questions/6205195/given-a-starting-and-ending-indices-how-can-i-copy-part-of-a-string-in-c/6205241
+ 3)
+ 
+ */
 
 /*
  Objective
@@ -33,8 +33,8 @@ References:
  osh-> and outlines the steps to be taken after input from the user has been
  read.
  The main() function continually loops as long as input does not equal "exit\n".
-
-When user inputs a command string a child process is forked and executes the
+ 
+ When user inputs a command string a child process is forked and executes the
  command specified by the user. This is obtained by parsing what the user has entered into separate tokens and storing the tokens in an array of character strings.
  For example, if the user enters the command ps -ael at the prompt, the values
  stored in the args array are:
@@ -52,7 +52,7 @@ When user inputs a command string a child process is forked and executes the
  
  Error Handling
  Perform the necessary error checking to ensure that a valid shell command was entered. - TODO
-
+ 
  
  */
 
@@ -70,7 +70,10 @@ When user inputs a command string a child process is forked and executes the
 int contains_ampersand(char * arr, size_t arr_sz) {
     // printf("%zu\n", arr_sz);
     if (arr_sz > 1) {
-        if (arr[arr_sz-1] == '&'){
+        if (arr[arr_sz-1] == '&') {
+            return 1;
+        }
+        else if (arr[0] == '&') {
             return 1;
         }
     }
@@ -80,16 +83,28 @@ int contains_ampersand(char * arr, size_t arr_sz) {
     return 0;
 }
 
+void remove_ampersand(char *arr, size_t arr_sz) {
+    // assume we know an '&' exists
+    int add_one = 0;
+    for (int i = 0; (i + add_one) < arr_sz; i++) {
+        if (arr[i]  == '&') {
+            add_one = 1;
+        }
+        arr[i] = arr[i+add_one]; // overwrite ampersand with next char if encountered
+    }
+    arr[arr_sz-1] = ' ';
+}
+
 int main(int argc, const char * argv[]) {
     printf("********** Welcome to the OSH **********\n");
-
+    
     char exit_str[6] = "exit\n";
     char input[MAX_ARGS/2 + 1] = {'\0'};
     char command[BUFSIZ] = {'\0'};
     char *params[BUFSIZ];
     int args_len = 0;
     int n_args = 0;
-    int status;
+    int status = 0;
     pid_t pid;
     
     // if input == exit terminate loop
@@ -100,6 +115,8 @@ int main(int argc, const char * argv[]) {
         memset(input, 0, sizeof input);
         // read in contents to char*
         fgets(input, BUFSIZ, stdin);
+                fflush(stdout);
+                fflush(stdin);
         if (strcmp(input, exit_str) == 0)
             break;
         // create a char* with max_args allowed
@@ -133,7 +150,6 @@ int main(int argc, const char * argv[]) {
         /* execvp(cmd, {"cmd", "-arg_flags or options",
          "arg_option", "arg_option", ...}) */
         if(strcmp(args[0], "exit") != 0) {
-            
             for (int i = 0; i < MAX_ARGS - 1; i++, ch_num++) {
                 if (i == 0) {
                     memcpy(command, args[i], sizeof(args[i]));
@@ -144,14 +160,14 @@ int main(int argc, const char * argv[]) {
                         
                         params[ch_num] = args[i];
                     }
-                    else{
+                    else {
                         params[ch_num] = NULL;
                         break; // no need to copy NULL to end of arr
                     }
                 }
             }
         }
-
+        
         // Parsing what the user has entered into separate tokens
         // command = "ps"
         // params[0] = "ps"
@@ -159,35 +175,90 @@ int main(int argc, const char * argv[]) {
         // params[2] = NULL
         // make sure that theres a non-null cmd
         int has_Amp = contains_ampersand(command, strlen(command));
-        for (int i = 0; i < n_args; i++) {
+        for (int i = 0; i < n_args && has_Amp == 0; i++) {
+            
             has_Amp = contains_ampersand(params[i], strlen(params[i]));
-                //printf("%s : Contains ending ampersand? %d\n",command,has_Amp);
+            //printf("%s : Contains ending ampersand? %d\n",command,has_Amp);
         }
-        
+        // this needs a look
         if ((strcmp(command, "")) != 0 ) {
+            
+            if (has_Amp == 1) {
+                remove_ampersand(command, strlen(command));
+                if (!contains_ampersand(command, strlen(command))) {
+                    char temp [MAX_ARGS][MAX_ARGS];
+                    int count = 0;
+                    for (int i = 0; i < n_args && has_Amp == 1; i++) {
+                        memset(temp[i], 0, sizeof temp[i]);
+                        if (contains_ampersand(params[i], strlen(params[i]))) {
+                            remove_ampersand(params[i], strlen(params[i]));
+                        }
+                        if((strcmp(params[i], " ")) == 0)
+                            count++;
+                        if (params[i+count] != NULL) {
+                            memcpy(temp[i], params[i+count], strlen(params[i+count]));
+                            //printf("%s : Contains ending ampersand? %d\n",command,has_Amp);
+                            
+                        }
+                        else{
+                            memcpy(temp[i], NULL, 0);
+                            for (int j = 0; j < n_args; j++)
+                                memcpy(params[j],temp[j], sizeof(temp[j]));
+                            break; // i loop
+                        }
+                    }
+                }
+            }
             pid = fork ();
             if (pid == 0) {
+                printf("this is within the pid == 0 block\n");
                 /* This is the child process.  Execute the shell command. */
                 execvp(command, params);
-                _exit (EXIT_FAILURE);
+                _exit (EXIT_SUCCESS); // return 0 - command executed in background;
             }
             else if (pid < 0) {
                 /* The fork failed.  Report failure.  */
                 status = -1;
+                printf("fork failure: %d\n", status);
             }
             else {
                 // This is the parent process.  Wait for the child to complete.
-                if (waitpid (pid, &status, 0) != pid) {
+                if ((waitpid (pid, &status, 0) != pid) && (has_Amp == 0)) {
                     status = -1;
-                    
-                }
-                if (has_Amp == 1) {
-                    // run command as background process
-                    int stat_val;
+                    printf("this is the parent process %d\n",getpid());
+                    // show value of exited child thread
+                    int  stat_val;
                     pid_t child_pid;
 
                     child_pid = wait(&stat_val);
+
+                    printf("Child has finished: PID = %d \n", child_pid);
+                    if (WIFEXITED(stat_val)) {
+                        printf("Child exited with code %d\n", WEXITSTATUS(stat_val));
+                    }
+                    
                 }
+                else if (has_Amp == 1) {
+                    // run child commands in background - exit here
+                    /*
+                     Note - from professor - From a background process point of view if you parse an ampersand (which looks like
+                     what you're doing) you shouldn't wait just have the parent exit.
+                     */
+                    
+                    /*
+                    //------------------------------------
+                    pid_t child_pid = wait(&status);
+                    
+                    printf("Child has finished: PID = %d \n", child_pid);
+                    if (WIFEXITED(status)) {
+                        printf("Child exited with code %d\n", WEXITSTATUS(status));
+                    }
+                    
+                    
+                   */ //------------------------------------
+                }
+                
+                
             }
         }
         n_args = 0;
