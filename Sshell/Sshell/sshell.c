@@ -70,6 +70,7 @@
 int contains_ampersand(char * arr, size_t arr_sz) {
     // printf("%zu\n", arr_sz);
     if (arr_sz > 1) {
+        // if ending index
         if (arr[arr_sz-1] == '&') {
             return 1;
         }
@@ -176,11 +177,10 @@ int main(int argc, const char * argv[]) {
         // make sure that theres a non-null cmd
         int has_Amp = contains_ampersand(command, strlen(command));
         for (int i = 0; i < n_args && has_Amp == 0; i++) {
-            
             has_Amp = contains_ampersand(params[i], strlen(params[i]));
             //printf("%s : Contains ending ampersand? %d\n",command,has_Amp);
         }
-        // this needs a look
+        // remove ampersand if flag = 1
         if ((strcmp(command, "")) != 0 ) {
             
             if (has_Amp == 1) {
@@ -209,6 +209,8 @@ int main(int argc, const char * argv[]) {
                     }
                 }
             }
+            // FORK PROCESS - need to make sure this makes sense
+            // TODO: check this - else if wait clause Lines 227 
             pid = fork ();
             if (pid == 0) {
                 printf("this is within the pid == 0 block\n");
