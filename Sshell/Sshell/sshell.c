@@ -1,7 +1,7 @@
 /*
- Version: 0.1
+ Version: 0.2
  Name: Donner Hanson
- Date: September 27, 2020
+ Date: September 30, 2020
  File: sshell.c
  
  Process:
@@ -209,8 +209,7 @@ int main(int argc, const char * argv[]) {
                     }
                 }
             }
-            // FORK PROCESS - need to make sure this makes sense
-            // TODO: check this - else if wait clause Lines 227
+            // FORK PROCESS
             child = fork();          /* creates a duplicate process! */
                        switch (child) {
                    case -1:
@@ -224,7 +223,7 @@ int main(int argc, const char * argv[]) {
                }
                break;
             default :  /* this is the parent */
-                if (has_Amp == 1) /* handle parent,wait for child */
+                if (has_Amp == 0) /* handle parent,dont wait for child */
                     while (child != wait(NULL))
                                           ;
             }
