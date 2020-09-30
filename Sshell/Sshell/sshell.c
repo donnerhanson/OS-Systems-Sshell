@@ -1,7 +1,7 @@
 /*
- Version: 0.1
+ Version: 0.2
  Name: Donner Hanson
- Date: September 27, 2020
+ Date: September 30, 2020
  File: sshell.c
  
  Process:
@@ -93,7 +93,7 @@ void remove_ampersand(char *arr, size_t arr_sz) {
         }
         arr[i] = arr[i+add_one]; // overwrite ampersand with next char if encountered
     }
-    arr[arr_sz-1] = ' ';
+    arr[arr_sz] = '\0';
 }
 
 int main(int argc, const char * argv[]) {
@@ -106,7 +106,8 @@ int main(int argc, const char * argv[]) {
     int args_len = 0;
     int n_args = 0;
     int status = 0;
-    pid_t pid;
+    pid_t parent = getpid();
+    pid_t child;
     
     // if input == exit terminate loop
     while ((strcmp(exit_str,input)) != 0) {
@@ -167,7 +168,7 @@ int main(int argc, const char * argv[]) {
                     }
                 }
             }
-        }
+        
         
         // Parsing what the user has entered into separate tokens
         // command = "ps"
@@ -193,7 +194,7 @@ int main(int argc, const char * argv[]) {
                         if (contains_ampersand(params[i], strlen(params[i]))) {
                             remove_ampersand(params[i], strlen(params[i]));
                         }
-                        if((strcmp(params[i], " ")) == 0)
+                        if((strcmp(params[i], "")) == 0)
                             count++;
                         if (params[i+count] != NULL) {
                             memcpy(temp[i], params[i+count], strlen(params[i+count]));
@@ -201,71 +202,41 @@ int main(int argc, const char * argv[]) {
                             
                         }
                         else{
-                            memcpy(temp[i], NULL, 0);
-                            for (int j = 0; j < n_args; j++)
-                                memcpy(params[j],temp[j], sizeof(temp[j]));
+                            int j = n_args-1;
+                            params[j] = NULL;
                             break; // i loop
                         }
                     }
                 }
             }
-            // FORK PROCESS - need to make sure this makes sense
-            // TODO: check this - else if wait clause Lines 227 
-            pid = fork ();
-            if (pid == 0) {
-                printf("this is within the pid == 0 block\n");
-                /* This is the child process.  Execute the shell command. */
-                execvp(command, params);
-                _exit (EXIT_SUCCESS); // return 0 - command executed in background;
+            // FORK PROCESS
+            child = fork();          /* creates a duplicate process! */
+                       switch (child) {
+                   case -1:
+               perror("could not fork the process");
+                       break;
+            case 0: /* this is the child process */
+                  status = execvp(command,params);
+                  if (status != 0){
+                     perror("error in execvp");
+                     exit(-2); /* terminate this process with error code -2 */
+               }
+               break;
+            default :  /* this is the parent */
+                if (has_Amp == 0) /* handle parent,dont wait for child */
+                    while (child != wait(NULL))
+                                          ;
             }
-            else if (pid < 0) {
-                /* The fork failed.  Report failure.  */
-                status = -1;
-                printf("fork failure: %d\n", status);
-            }
-            else {
-                // This is the parent process.  Wait for the child to complete.
-                if ((waitpid (pid, &status, 0) != pid) && (has_Amp == 0)) {
-                    status = -1;
-                    printf("this is the parent process %d\n",getpid());
-                    // show value of exited child thread
-                    int  stat_val;
-                    pid_t child_pid;
 
-                    child_pid = wait(&stat_val);
 
-                    printf("Child has finished: PID = %d \n", child_pid);
-                    if (WIFEXITED(stat_val)) {
-                        printf("Child exited with code %d\n", WEXITSTATUS(stat_val));
-                    }
-                    
-                }
-                else if (has_Amp == 1) {
-                    // run child commands in background - exit here
-                    /*
-                     Note - from professor - From a background process point of view if you parse an ampersand (which looks like
-                     what you're doing) you shouldn't wait just have the parent exit.
-                     */
-                    
-                    /*
-                    //------------------------------------
-                    pid_t child_pid = wait(&status);
-                    
-                    printf("Child has finished: PID = %d \n", child_pid);
-                    if (WIFEXITED(status)) {
-                        printf("Child exited with code %d\n", WEXITSTATUS(status));
-                    }
-                    
-                    
-                   */ //------------------------------------
-                }
-                
-                
-            }
+            
         }
         n_args = 0;
         args_len = 0;
+        has_Amp = 0;
+        }
     }
+    
     printf("********** GOODBYE **********\n");
     return 0;
 }
