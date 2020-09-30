@@ -56,7 +56,7 @@
  
  */
 
-
+#include <ctype.h> // defines isspace
 #include <errno.h>  // defines error codes for exit
 #include <fcntl.h>  // defines open/close, read/write flags
 #include <stdio.h>  // defines BUFSIZ, printf
@@ -65,7 +65,11 @@
 #include <unistd.h> // defines access, read, write
 
 
+
 #define MAX_ARGS 80 // dont necessarily need this now - check
+
+//prototypes
+char *trim(char *str);
 
 int contains_ampersand(char * arr, size_t arr_sz) {
     // printf("%zu\n", arr_sz);
@@ -106,7 +110,7 @@ int main(int argc, const char * argv[]) {
     int args_len = 0;
     int n_args = 0;
     int status = 0;
-    pid_t pid;
+    
     
     // if input == exit terminate loop
     while ((strcmp(exit_str,input)) != 0) {
@@ -210,18 +214,35 @@ int main(int argc, const char * argv[]) {
                 }
             }
             // FORK PROCESS - need to make sure this makes sense
-            // TODO: check this - else if wait clause Lines 227 
+            // TODO: check this - else if wait clause Lines 227
+            pid_t pid;
             pid = fork ();
             if (pid == 0) {
                 printf("this is within the pid == 0 block\n");
                 /* This is the child process.  Execute the shell command. */
                 execvp(command, params);
-                _exit (EXIT_SUCCESS); // return 0 - command executed in background;
+                if (has_Amp == 0) // if no ampersand exit back to parent
+                    _exit (EXIT_SUCCESS); // return 0 - parent doesn't wait/kill
+                 // else run in child process - parent waits for control
+                 // creates an additional shell instance
             }
             else if (pid < 0) {
                 /* The fork failed.  Report failure.  */
                 status = -1;
                 printf("fork failure: %d\n", status);
+            }
+            else if (has_Amp == 1)
+            {
+                *command = *trim(command);
+                for (int i = 0; i < n_args-1; i++)
+                {
+                    *params[i] = *trim(params[i]);
+                }
+                status = execvp(command, params);
+                status;
+                {
+                    ;
+                }
             }
             else {
                 // This is the parent process.  Wait for the child to complete.
@@ -240,27 +261,6 @@ int main(int argc, const char * argv[]) {
                     }
                     
                 }
-                else if (has_Amp == 1) {
-                    // run child commands in background - exit here
-                    /*
-                     Note - from professor - From a background process point of view if you parse an ampersand (which looks like
-                     what you're doing) you shouldn't wait just have the parent exit.
-                     */
-                    
-                    /*
-                    //------------------------------------
-                    pid_t child_pid = wait(&status);
-                    
-                    printf("Child has finished: PID = %d \n", child_pid);
-                    if (WIFEXITED(status)) {
-                        printf("Child exited with code %d\n", WEXITSTATUS(status));
-                    }
-                    
-                    
-                   */ //------------------------------------
-                }
-                
-                
             }
         }
         n_args = 0;
@@ -268,4 +268,47 @@ int main(int argc, const char * argv[]) {
     }
     printf("********** GOODBYE **********\n");
     return 0;
+}
+
+
+
+
+char *trim(char *str)
+{
+    size_t len = 0;
+    char *frontp = str;
+    char *endp = NULL;
+
+    if( str == NULL ) { return NULL; }
+    if( str[0] == '\0' ) { return str; }
+
+    len = strlen(str);
+    endp = str + len;
+
+    /* Move the front and back pointers to address the first non-whitespace
+     * characters from each end.
+     */
+    while( isspace((unsigned char) *frontp) ) { ++frontp; }
+    if( endp != frontp )
+    {
+        while( isspace((unsigned char) *(--endp)) && endp != frontp ) {}
+    }
+
+    if( frontp != str && endp == frontp )
+            *str = '\0';
+    else if( str + len - 1 != endp )
+            *(endp + 1) = '\0';
+
+    /* Shift the string so that it starts at str so that if it's dynamically
+     * allocated, we can still free it on the returned pointer.  Note the reuse
+     * of endp to mean the front of the string buffer now.
+     */
+    endp = str;
+    if( frontp != str )
+    {
+            while( *frontp ) { *endp++ = *frontp++; }
+            *endp = '\0';
+    }
+
+    return str;
 }
