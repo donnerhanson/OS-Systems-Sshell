@@ -12,6 +12,7 @@ email: hanso127@mail.chapman.edu
 This program is a basic representation of a Linux shell program.  
 The shell is able to process exec() family function commands.  
 This main topic of the project was to introduce and explore threading in C  
+Tested using MacOS  
 
 *Process:*  
 Enter loop  
