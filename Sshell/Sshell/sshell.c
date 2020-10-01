@@ -3,21 +3,29 @@
  Name: Donner Hanson
  Date: September 30, 2020
  File: sshell.c
+ Student ID: 001276484
+ email: hanso127@mail.chapman.edu
  
  Process:
  Enter loop
  Get User input
  Parse and place data into argument arrays - parse
  pass to execution function
-    if contains ampersand : perform execution process in background child process and have parent wait for exit from process
+    if contains ampersand : perform execution process in background
+                            child process and
+                            have parent wait for exit from process
  else
  return control to parent process
+ 
+ sample input:
+ ps -ael
+ ps -ael &
  
  
  References:
  1) man pages
  2) copy substring: https://stackoverflow.com/questions/6205195/given-a-starting-and-ending-indices-how-can-i-copy-part-of-a-string-in-c/6205241
- 3)
+ 3) Professor Springer
  
  */
 
@@ -51,7 +59,12 @@
  or not the parent process is to wait for the child to exit.
  
  Error Handling
- Perform the necessary error checking to ensure that a valid shell command was entered. - TODO
+ If user inputs an incorrect command the call to exec family function returns
+ command error - as would in a normal terminal
+ 
+ AMPERSAND MUST BE INCLUDED AFTER A COMMAND to make use of the no wait functionality
+ 
+ example: ls -lah &
  
  
  */
@@ -106,13 +119,13 @@ int main(int argc, const char * argv[]) {
     int args_len = 0;
     int n_args = 0;
     int status = 0;
-    pid_t parent = getpid();
     pid_t child;
     
     // if input == exit terminate loop
     while ((strcmp(exit_str,input)) != 0) {
+        n_args = 0;
+        args_len = 0;
         printf("osh> ");
-        fflush(stdout);
         // clear arr contents
         memset(input, 0, sizeof input);
         // read in contents to char*
@@ -126,12 +139,10 @@ int main(int argc, const char * argv[]) {
         
         // get the length of the string without the null terminator
         for (int i = 0; (i < strlen(input)) && (i < BUFSIZ); i++, args_len++) {
-            //printf("%d : %c\n", i, input[i]);
             if (input[i] == ' ' || input[i] == '\n') {
                 if (n_args < MAX_ARGS) {
                     // starting index of next argument
                     int substring_start = i - args_len;
-                    //printf("arg len: %d \t arg_first index: %d\n", args_len,substring_start);
                     // copy substring to char* arr
                     strncpy (args[n_args], input+substring_start,
                              i - substring_start );
@@ -148,6 +159,12 @@ int main(int argc, const char * argv[]) {
             }
         }
         int ch_num = 0;
+        
+        for (int i = 0; i < n_args; i++) {
+            if (strcmp(args[i], "") == 0)
+                n_args--;
+        }
+        
         // FORMAT OUTPUT Arrays
         /* execvp(cmd, {"cmd", "-arg_flags or options",
          "arg_option", "arg_option", ...}) */
@@ -198,8 +215,6 @@ int main(int argc, const char * argv[]) {
                             count++;
                         if (params[i+count] != NULL) {
                             memcpy(temp[i], params[i+count], strlen(params[i+count]));
-                            //printf("%s : Contains ending ampersand? %d\n",command,has_Amp);
-                            
                         }
                         else{
                             int j = n_args-1;
@@ -210,7 +225,9 @@ int main(int argc, const char * argv[]) {
                 }
             }
             // FORK PROCESS
-            child = fork();          /* creates a duplicate process! */
+            // creates a duplicate process all code following is replicated
+            // Process spawned ID is checked and process exited upon completion
+            child = fork();
                        switch (child) {
                    case -1:
                perror("could not fork the process");
@@ -227,9 +244,6 @@ int main(int argc, const char * argv[]) {
                     while (child != wait(NULL))
                                           ;
             }
-
-
-            
         }
         n_args = 0;
         args_len = 0;
