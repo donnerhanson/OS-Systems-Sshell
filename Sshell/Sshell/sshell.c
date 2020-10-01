@@ -11,9 +11,9 @@
  Get User input
  Parse and place data into argument arrays - parse
  pass to execution function
-    if contains ampersand : perform execution process in background
-                            child process and
-                            have parent wait for exit from process
+ if contains ampersand : perform execution process in background
+ child process and
+ have parent wait for exit from process
  else
  return control to parent process
  
@@ -125,13 +125,13 @@ int main(int argc, const char * argv[]) {
     while ((strcmp(exit_str,input)) != 0) {
         n_args = 0;
         args_len = 0;
-        printf("osh> ");
+        printf("osh>");
+        fflush(stdout);
         // clear arr contents
         memset(input, 0, sizeof input);
         // read in contents to char*
         fgets(input, BUFSIZ, stdin);
-                fflush(stdout);
-                fflush(stdin);
+        fflush(stdin);
         if (strcmp(input, exit_str) == 0)
             break;
         // create a char* with max_args allowed
@@ -185,69 +185,69 @@ int main(int argc, const char * argv[]) {
                     }
                 }
             }
-        
-        
-        // Parsing what the user has entered into separate tokens
-        // command = "ps"
-        // params[0] = "ps"
-        // params[1] = "-ael"
-        // params[2] = NULL
-        // make sure that theres a non-null cmd
-        int has_Amp = contains_ampersand(command, strlen(command));
-        for (int i = 0; i < n_args && has_Amp == 0; i++) {
-            has_Amp = contains_ampersand(params[i], strlen(params[i]));
-            //printf("%s : Contains ending ampersand? %d\n",command,has_Amp);
-        }
-        // remove ampersand if flag = 1
-        if ((strcmp(command, "")) != 0 ) {
             
-            if (has_Amp == 1) {
-                remove_ampersand(command, strlen(command));
-                if (!contains_ampersand(command, strlen(command))) {
-                    char temp [MAX_ARGS][MAX_ARGS];
-                    int count = 0;
-                    for (int i = 0; i < n_args && has_Amp == 1; i++) {
-                        memset(temp[i], 0, sizeof temp[i]);
-                        if (contains_ampersand(params[i], strlen(params[i]))) {
-                            remove_ampersand(params[i], strlen(params[i]));
-                        }
-                        if((strcmp(params[i], "")) == 0)
-                            count++;
-                        if (params[i+count] != NULL) {
-                            memcpy(temp[i], params[i+count], strlen(params[i+count]));
-                        }
-                        else{
-                            int j = n_args-1;
-                            params[j] = NULL;
-                            break; // i loop
+            
+            // Parsing what the user has entered into separate tokens
+            // command = "ps"
+            // params[0] = "ps"
+            // params[1] = "-ael"
+            // params[2] = NULL
+            // make sure that theres a non-null cmd
+            int has_Amp = contains_ampersand(command, strlen(command));
+            for (int i = 0; i < n_args && has_Amp == 0; i++) {
+                has_Amp = contains_ampersand(params[i], strlen(params[i]));
+                //printf("%s : Contains ending ampersand? %d\n",command,has_Amp);
+            }
+            // remove ampersand if flag = 1
+            if ((strcmp(command, "")) != 0 ) {
+                
+                if (has_Amp == 1) {
+                    remove_ampersand(command, strlen(command));
+                    if (!contains_ampersand(command, strlen(command))) {
+                        char temp [MAX_ARGS][MAX_ARGS];
+                        int count = 0;
+                        for (int i = 0; i < n_args && has_Amp == 1; i++) {
+                            memset(temp[i], 0, sizeof temp[i]);
+                            if (contains_ampersand(params[i], strlen(params[i]))) {
+                                remove_ampersand(params[i], strlen(params[i]));
+                            }
+                            if((strcmp(params[i], "")) == 0)
+                                count++;
+                            if (params[i+count] != NULL) {
+                                memcpy(temp[i], params[i+count], strlen(params[i+count]));
+                            }
+                            else{
+                                int j = n_args-1;
+                                params[j] = NULL;
+                                break; // i loop
+                            }
                         }
                     }
                 }
+                // FORK PROCESS
+                // creates a duplicate process all code following is replicated
+                // Process spawned ID is checked and process exited upon completion
+                child = fork();
+                switch (child) {
+                    case -1:
+                        perror("could not fork the process");
+                        break;
+                    case 0: /* this is the child process */
+                        status = execvp(command,params);
+                        if (status != 0){
+                            perror("error in execvp");
+                            exit(-2); /* terminate this process with error code -2 */
+                        }
+                        break;
+                    default :  /* this is the parent */
+                        if (has_Amp == 0) /* handle parent,dont wait for child */
+                            while (child != wait(NULL))
+                                ;
+                }
             }
-            // FORK PROCESS
-            // creates a duplicate process all code following is replicated
-            // Process spawned ID is checked and process exited upon completion
-            child = fork();
-                       switch (child) {
-                   case -1:
-               perror("could not fork the process");
-                       break;
-            case 0: /* this is the child process */
-                  status = execvp(command,params);
-                  if (status != 0){
-                     perror("error in execvp");
-                     exit(-2); /* terminate this process with error code -2 */
-               }
-               break;
-            default :  /* this is the parent */
-                if (has_Amp == 0) /* handle parent,dont wait for child */
-                    while (child != wait(NULL))
-                                          ;
-            }
-        }
-        n_args = 0;
-        args_len = 0;
-        has_Amp = 0;
+            n_args = 0;
+            args_len = 0;
+            has_Amp = 0;
         }
     }
     
