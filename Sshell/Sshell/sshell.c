@@ -1,7 +1,11 @@
 /*
  Version: 0.2
  Name: Donner Hanson
+<<<<<<< Updated upstream
  Date: September 30, 2020
+=======
+ Date: September 28, 2020
+>>>>>>> Stashed changes
  File: sshell.c
  Student ID: 001276484
  email: hanso127@mail.chapman.edu
@@ -15,7 +19,7 @@
  child process and
  have parent wait for exit from process
  else
- return control to parent process
+ return control to parent process (repeat main thread loop)
  
  sample input:
  ps -ael
@@ -59,12 +63,16 @@
  or not the parent process is to wait for the child to exit.
  
  Error Handling
+<<<<<<< Updated upstream
  If user inputs an incorrect command the call to exec family function returns
  command error - as would in a normal terminal
  
  AMPERSAND MUST BE INCLUDED AFTER A COMMAND to make use of the no wait functionality
  
  example: ls -lah &
+=======
+ Perform the necessary error checking to ensure that a valid shell command was entered.
+>>>>>>> Stashed changes
  
  
  */
